@@ -35,6 +35,61 @@ int main(void){
                                             image.rows,
                                             image.cols));
 
+    cudnnTensorDescriptor_t output_descriptor;
+    checkCUDNN(cudnnCreateTensorDescriptor(&output_descriptor));
+    checkCUDNN(cudnnSetTensor4dDescriptor(output_descriptor, 
+                                            CUDNN_TENSOR_NCHW,
+                                            CUDNN_DATA_FLOAT,
+                                            1, 
+                                            3, 
+                                            image.rows,
+                                            image.cols));
+
+    cudnnFilterDescriptor_t filter_descriptor;
+    checkCUDNN(cudnnCreateFilterDescriptor(&filter_descriptor));
+    checkCUDNN(cudnnSetFilter4dDescriptor(filter_descriptor, 
+                                            CUDNN_DATA_FLOAT,
+                                            CUDNN_TENSOR_NCHW,
+                                            3,
+                                            3,
+                                            3,
+                                            3));
+
+    cudnnConvolutionDescriptor_t conv_descriptor;
+    checkCUDNN(cudnnCreateConvolutionDescriptor(&conv_descriptor,
+                                            1,
+                                            1,
+                                            1,
+                                            1,
+                                            1,
+                                            1,
+                                            CUDNN_CROSS_CORRILATION,
+                                            CUDNN_DATA_FLOAT));
+
+    cudnnConvolutionFwdAlgo_t conv_alg;
+    checkCUDNN(cudnnGetConvolutionForwardAlgorithm(cudnn,
+                                            input_descriptor,
+                                            filter_descriptor,
+                                            conv_descriptor,
+                                            output_descriptor,
+                                            CUDNN_CONVOLUTION_FWD_PREFER_FAST,
+                                            0,
+                                            &conv_alg));
+
+    size_t ws_bytes = 0;
+    checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(cudnn,
+                                            input_descriptor, 
+                                            filter_descriptor, 
+                                            conv_descriptor,
+                                            output_descriptor,
+                                            conv_alg,
+                                            &ws_bytes));
+                                        
+    std::cout << "WS size: " << (ws_bytes / (1<<20)) << "- MB" << std::endl;
+
+
+    
+
     
 
 
