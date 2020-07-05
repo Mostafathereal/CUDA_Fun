@@ -13,6 +13,23 @@
     }                                                        \
   }
 
+void save_image(const char* output_filename,
+    float* buffer,
+    int height,
+    int width) {
+cv::Mat output_image(height, width, CV_32FC3, buffer);
+// Make negative values zero.
+cv::threshold(output_image,
+    output_image,
+    /*threshold=*/0,
+    /*maxval=*/0,
+    cv::THRESH_TOZERO);
+cv::normalize(output_image, output_image, 0.0, 255.0, cv::NORM_MINMAX);
+output_image.convertTo(output_image, CV_8UC3);
+cv::imwrite(output_filename, output_image);
+std::cerr << "Wrote output to " << output_filename << std::endl;
+}
+
 cv::Mat ldimag(const char* image_path){
     cv::Mat image = cv::imread(image_path);
     image.convertTo(image, CV_32FC3);
@@ -22,14 +39,14 @@ cv::Mat ldimag(const char* image_path){
 
 int main(void){
     cudnnHandle_t cudnn;
-    checkCUDNN(cudnnCreate(&cudnn));
+    cudnnCreate(&cudnn);
     cv::Mat image = ldimag("conure.jpg");
 
     // define descriptors for input/output tensors, and for filter tensors
     cudnnTensorDescriptor_t input_descriptor;
     checkCUDNN(cudnnCreateTensorDescriptor(&input_descriptor));
     checkCUDNN(cudnnSetTensor4dDescriptor(input_descriptor, 
-                                            CUDNN_TENSOR_NCHW, 
+                                            CUDNN_TENSOR_NHWC, 
                                             CUDNN_DATA_FLOAT, 
                                             1, 
                                             3,
@@ -39,7 +56,7 @@ int main(void){
     cudnnTensorDescriptor_t output_descriptor;
     checkCUDNN(cudnnCreateTensorDescriptor(&output_descriptor));
     checkCUDNN(cudnnSetTensor4dDescriptor(output_descriptor, 
-                                            CUDNN_TENSOR_NCHW,
+                                            CUDNN_TENSOR_NHWC,
                                             CUDNN_DATA_FLOAT,
                                             1, 
                                             3, 
@@ -92,7 +109,7 @@ int main(void){
     std::cout << "WS size: " << (ws_bytes / (1<<20)) << "- MB" << std::endl;
 
     // size of input img in bytes
-    imsize = image.rows * image.cols * 3 * sizeof(float)
+    int imsize = image.rows * image.cols * 3 * sizeof(float);
 
     void* d_ws = nullptr;
     cudaMalloc(&d_ws, ws_bytes);
@@ -103,48 +120,50 @@ int main(void){
 
     // since it is a `same` convolution, use same amount of memory for output 
     float* d_output = nullptr;
-    cudaMalloc(&d_input, imsize);
+    cudaMalloc(&d_output, imsize);
 
-    cudaMemcpy(d_input, image.ptr<float>0, imsize, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_input, image.ptr<float>(0), imsize, cudaMemcpyHostToDevice);
     cudaMemset(d_output, 0, imsize);
 
     // 3x3 size of kernel, x3 to match #channels of input image, (resulting in a 1 channel out-img)
     // again x3 to result in the same number of channels in output as input
-    float kernel_temp[3][3][[3][3] = 
-    {{{{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}},     
-     {{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}},     
-     {{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}}},     
-     {{{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}},     
-     {{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}},     
-     {{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}}},     
-     {{{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}},     
-     {{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}},     
-     {{-2, 0, 2},
-     {-5, 0, 5},
-     {-2, 0, 2}}}}
+    float kernel_temp[3][3][3][3] = {
+    {{{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}},     
+    {{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}},      
+    {{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}}},     
+    {{{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}},     
+    {{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}},     
+    {{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}}},     
+    {{{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}},     
+    {{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}},     
+    {{-2, 0, 2},
+    {-5, 0, 5},
+    {-2, 0, 2}}}};
 
     float* d_kernel = nullptr;
-    cudaMalloc(d_kernel, sizeof(kernel_temp))
-    cudaMemcpy(d_kernel, kernel_temp, sizeof(kernel_temp), cudaMemcpyHostToDevice)
+    cudaMalloc(&d_kernel, sizeof(kernel_temp));
+    cudaMemcpy(d_kernel, kernel_temp, sizeof(kernel_temp), cudaMemcpyHostToDevice);
 
     //performing the convolution
-    float alpha, beta = 1, 0;
+    float alpha, beta; 
+    alpha = 1;
+    beta = 0;
     checkCUDNN(cudnnConvolutionForward(cudnn, 
                                         &alpha,
                                         input_descriptor,
@@ -154,19 +173,38 @@ int main(void){
                                         conv_descriptor,
                                         conv_alg,
                                         d_ws,
+                                        ws_bytes,
                                         &beta,
                                         output_descriptor,
                                         d_output));
 
-
-    // float* h_output = new float[imsize];
-    // cudaMemcpy()
-    
+    std::cout << "\n\n hehe after conv \n\n\n";
 
 
-    
+    float* h_output = new float[imsize];
+
+    std::cout << "\n\n hehe after conv 1\n\n\n";
+
+    cudaMemcpy(h_output, d_output, imsize, cudaMemcpyDeviceToHost);
+
+    std::cout << "\n\n hehe after conv 2\n\n\n";
+
+    save_image("convoluted_conure(out).png", h_output, image.rows, image.cols);
+
+    std::cout << "\n\n hehe after conv 3\n\n\n" << imsize << "\n\n";
 
 
+    delete[] h_output;
+    cudaFree(d_input);
+    cudaFree(d_kernel);
+    cudaFree(d_ws);
+    cudaFree(d_output);
+    cudnnDestroyTensorDescriptor(input_descriptor);
+    cudnnDestroyTensorDescriptor(output_descriptor);
+    cudnnDestroyFilterDescriptor(filter_descriptor);
+    cudnnDestroyConvolutionDescriptor(conv_descriptor);
+
+    cudnnDestroy(cudnn);
 
     return 0;
 }
