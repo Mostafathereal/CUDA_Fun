@@ -91,9 +91,78 @@ int main(void){
                                         
     std::cout << "WS size: " << (ws_bytes / (1<<20)) << "- MB" << std::endl;
 
+    // size of input img in bytes
+    imsize = image.rows * image.cols * 3 * sizeof(float)
+
+    void* d_ws = nullptr;
+    cudaMalloc(&d_ws, ws_bytes);
+
+    // allocate h * w * channels * float size to the input tensor
+    float* d_input = nullptr;
+    cudaMalloc(&d_input, imsize);
+
+    // since it is a `same` convolution, use same amount of memory for output 
+    float* d_output = nullptr;
+    cudaMalloc(&d_input, imsize);
+
+    cudaMemcpy(d_input, image.ptr<float>0, imsize, cudaMemcpyHostToDevice);
+    cudaMemset(d_output, 0, imsize);
+
+    // 3x3 size of kernel, x3 to match #channels of input image, (resulting in a 1 channel out-img)
+    // again x3 to result in the same number of channels in output as input
+    float kernel_temp[3][3][[3][3] = 
+    {{{{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}},     
+     {{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}},     
+     {{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}}},     
+     {{{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}},     
+     {{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}},     
+     {{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}}},     
+     {{{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}},     
+     {{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}},     
+     {{-2, 0, 2},
+     {-5, 0, 5},
+     {-2, 0, 2}}}}
+
+    float* d_kernel = nullptr;
+    cudaMalloc(d_kernel, sizeof(kernel_temp))
+    cudaMemcpy(d_kernel, kernel_temp, sizeof(kernel_temp), cudaMemcpyHostToDevice)
+
+    //performing the convolution
+    float alpha, beta = 1, 0;
+    checkCUDNN(cudnnConvolutionForward(cudnn, 
+                                        &alpha,
+                                        input_descriptor,
+                                        d_input,
+                                        filter_descriptor,
+                                        d_kernel, 
+                                        conv_descriptor,
+                                        conv_alg,
+                                        d_ws,
+                                        &beta,
+                                        output_descriptor,
+                                        d_output));
+
+
+    // float* h_output = new float[imsize];
+    // cudaMemcpy()
     
 
-    
 
     
 
