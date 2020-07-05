@@ -2,7 +2,7 @@
 #include <cudnn.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-
+ 
 #define checkCUDNN(expression)                               \
   {                                                          \
     cudnnStatus_t status = (expression);                     \
