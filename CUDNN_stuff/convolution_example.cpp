@@ -199,62 +199,12 @@ float kernel_temp4[3][3][3][3] = { {{{2, 0, -2}, {5, 0, -5}, {2, 0, -2}},
     float alpha, beta; 
     alpha = 1;
     beta = 0;
-    checkCUDNN(cudnnConvolutionForward(cudnn, 
-                                        &alpha,
-                                        input_descriptor,
-                                        d_input,
-                                        filter_descriptor,
-                                        d_kernel, 
-                                        conv_descriptor,
-                                        conv_alg,
-                                        d_ws,
-                                        ws_bytes,
-                                        &beta,
-                                        output_descriptor,
-                                        d_output));
 
-    checkCUDNN(cudnnConvolutionForward(cudnn, 
-                                        &alpha,
-                                        input_descriptor,
-                                        d_input,
-                                        filter_descriptor,
-                                        d_kernel2, 
-                                        conv_descriptor,
-                                        conv_alg,
-                                        d_ws,
-                                        ws_bytes,
-                                        &beta,
-                                        output_descriptor,
-                                        d_output2));
+checkCUDNN(cudnnConvolutionForward(cudnn, &alpha, input_descriptor, d_input, filter_descriptor, d_kernel, conv_descriptor, conv_alg, d_ws, ws_bytes, &beta, output_descriptor, d_output)); 
+checkCUDNN(cudnnConvolutionForward(cudnn, &alpha, input_descriptor, d_input, filter_descriptor, d_kernel2, conv_descriptor, conv_alg, d_ws, ws_bytes, &beta, output_descriptor, d_output2)); 
+checkCUDNN(cudnnConvolutionForward(cudnn, &alpha, input_descriptor, d_input, filter_descriptor, d_kernel3, conv_descriptor, conv_alg, d_ws, ws_bytes, &beta, output_descriptor, d_output3)); 
+checkCUDNN(cudnnConvolutionForward(cudnn, &alpha, input_descriptor, d_input, filter_descriptor, d_kernel4, conv_descriptor, conv_alg, d_ws, ws_bytes, &beta, output_descriptor, d_output4)); 
 
-    checkCUDNN(cudnnConvolutionForward(cudnn, 
-                                        &alpha,
-                                        input_descriptor,
-                                        d_input,
-                                        filter_descriptor,
-                                        d_kernel4, 
-                                        conv_descriptor,
-                                        conv_alg,
-                                        d_ws,
-                                        ws_bytes,
-                                        &beta,
-                                        output_descriptor,
-                                        d_output4));
-
-
-    checkCUDNN(cudnnConvolutionForward(cudnn, 
-                                        &alpha,
-                                        input_descriptor,
-                                        d_input,
-                                        filter_descriptor,
-                                        d_kernel3, 
-                                        conv_descriptor,
-                                        conv_alg,
-                                        d_ws,
-                                        ws_bytes,
-                                        &beta,
-                                        output_descriptor,
-                                        d_output3));
 
     std::cout << "\n\n hehe after conv \n\n\n";
 
