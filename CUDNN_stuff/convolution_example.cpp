@@ -2,6 +2,7 @@
 #include <cudnn.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include <algorithm>
  
 #define checkCUDNN(expression)                               \
   {                                                          \
@@ -122,10 +123,15 @@ int main(void){
     float* d_output = nullptr;
     cudaMalloc(&d_output, imsize);
 
+    float* d_output2 = nullptr;
+    cudaMalloc(&d_output2, imsize);
+
     cudaMemcpy(d_input, image.ptr<float>(0), imsize, cudaMemcpyHostToDevice);
     cudaMemset(d_output, 0, imsize);
 
-    // 3x3 size of kernel, x3 to match #channels of input image, (resulting in a 1 channel out-img)
+    cudaMemset(d_output2, 0, imsize);
+
+    // 3x3 size of kernel, x3 to match #channels of input imafloat* h_output = new float[imsize];ge, (resulting in a 1 channel out-img)
     // again x3 to result in the same number of channels in output as input
     float kernel_temp[3][3][3][3] = {
     {{{-2, 0, 2},
@@ -156,9 +162,43 @@ int main(void){
     {-5, 0, 5},
     {-2, 0, 2}}}};
 
+    float kernel_temp2[3][3][3][3] = {
+    {{{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}},     
+    {{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}},      
+   {{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}}},     
+    {{{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}},     
+    {{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}},     
+    {{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}}},     
+    {{{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}},     
+    {{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}},     
+    {{-2, -5, -2},
+    {0, 0, 0},
+    {2, 5, 2}}}};
+
+
     float* d_kernel = nullptr;
     cudaMalloc(&d_kernel, sizeof(kernel_temp));
     cudaMemcpy(d_kernel, kernel_temp, sizeof(kernel_temp), cudaMemcpyHostToDevice);
+
+    float* d_kernel2 = nullptr;
+    cudaMalloc(&d_kernel2, sizeof(kernel_temp2));
+    cudaMemcpy(d_kernel2, kernel_temp2, sizeof(kernel_temp2), cudaMemcpyHostToDevice);
 
     //performing the convolution
     float alpha, beta; 
@@ -178,10 +218,25 @@ int main(void){
                                         output_descriptor,
                                         d_output));
 
+    checkCUDNN(cudnnConvolutionForward(cudnn, 
+                                        &alpha,
+                                        input_descriptor,
+                                        d_input,
+                                        filter_descriptor,
+                                        d_kernel2, 
+                                        conv_descriptor,
+                                        conv_alg,
+                                        d_ws,
+                                        ws_bytes,
+                                        &beta,
+                                        output_descriptor,
+                                        d_output2));
+
     std::cout << "\n\n hehe after conv \n\n\n";
 
 
     float* h_output = new float[imsize];
+    float* h_output2 = new float[imsize];
 
     std::cout << "\n\n hehe after conv 1\n\n\n";
 
@@ -189,7 +244,17 @@ int main(void){
 
     std::cout << "\n\n hehe after conv 2\n\n\n";
 
-    save_image("convoluted_conure(out).png", h_output, image.rows, image.cols);
+    save_image("conure(out).png", h_output, image.rows, image.cols);
+
+    cudaMemcpy(h_output2, d_output2, imsize, cudaMemcpyDeviceToHost);
+    save_image("conure(out)2.png", h_output2, image.rows, image.cols);
+
+    for (int count = 0; count < imsize; count++){
+      h_output2[count] = std::max(h_output[count], h_output2[count]);
+
+    }
+
+    save_image("conure(out)combined.png", h_output2, image.rows, image.cols);
 
     std::cout << "\n\n hehe after conv 3\n\n\n" << imsize << "\n\n";
 
