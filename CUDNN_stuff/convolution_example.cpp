@@ -126,6 +126,12 @@ int main(void){
     float* d_output2 = nullptr;
     cudaMalloc(&d_output2, imsize);
 
+    float* d_output3 = nullptr;
+    cudaMalloc(&d_output3, imsize);
+
+    float* d_output4 = nullptr;
+    cudaMalloc(&d_output4, imsize);
+
     cudaMemcpy(d_input, image.ptr<float>(0), imsize, cudaMemcpyHostToDevice);
     cudaMemset(d_output, 0, imsize);
 
@@ -133,64 +139,45 @@ int main(void){
 
     // 3x3 size of kernel, x3 to match #channels of input imafloat* h_output = new float[imsize];ge, (resulting in a 1 channel out-img)
     // again x3 to result in the same number of channels in output as input
-    float kernel_temp[3][3][3][3] = {
-    {{{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}},     
-    {{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}},      
-    {{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}}},     
-    {{{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}},     
-    {{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}},     
-    {{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}}},     
-    {{{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}},     
-    {{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}},     
-    {{-2, 0, 2},
-    {-5, 0, 5},
-    {-2, 0, 2}}}};
+float kernel_temp[3][3][3][3] = { {{{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}, 
+                                  {{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}, 
+                                  {{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}}, 
+                                  {{{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}, 
+                                  {{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}, 
+                                  {{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}}, 
+                                  {{{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}, 
+                                  {{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}, 
+                                  {{-2, 0, 2}, {-5, 0, 5}, {-2, 0, 2}}}}; 
 
-    float kernel_temp2[3][3][3][3] = {
-    {{{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}},     
-    {{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}},      
-   {{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}}},     
-    {{{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}},     
-    {{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}},     
-    {{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}}},     
-    {{{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}},     
-    {{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}},     
-    {{-2, -5, -2},
-    {0, 0, 0},
-    {2, 5, 2}}}};
+float kernel_temp2[3][3][3][3] = { {{{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}, 
+                                  {{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}, 
+                                  {{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}}, 
+                                  {{{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}, 
+                                  {{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}, 
+                                  {{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}}, 
+                                  {{{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}, 
+                                  {{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}, 
+                                  {{-2, -5, -2}, {0, 0, 0}, {2, 5, 2}}}};
 
+float kernel_temp3[3][3][3][3] = { {{{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}, 
+                                  {{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}, 
+                                  {{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}}, 
+                                  {{{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}, 
+                                  {{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}, 
+                                  {{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}}, 
+                                  {{{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}, 
+                                  {{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}, 
+                                  {{2, 5, 2}, {0, 0, 0}, {-2, -5, -2}}}}; 
+
+float kernel_temp4[3][3][3][3] = { {{{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}, 
+                                  {{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}, 
+                                  {{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}}, 
+                                  {{{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}, 
+                                  {{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}, 
+                                  {{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}}, 
+                                  {{{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}, 
+                                  {{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}, 
+                                  {{2, 0, -2}, {5, 0, -5}, {2, 0, -2}}}}; 
 
     float* d_kernel = nullptr;
     cudaMalloc(&d_kernel, sizeof(kernel_temp));
@@ -199,6 +186,14 @@ int main(void){
     float* d_kernel2 = nullptr;
     cudaMalloc(&d_kernel2, sizeof(kernel_temp2));
     cudaMemcpy(d_kernel2, kernel_temp2, sizeof(kernel_temp2), cudaMemcpyHostToDevice);
+
+    float* d_kernel3 = nullptr;
+    cudaMalloc(&d_kernel3, sizeof(kernel_temp3));
+    cudaMemcpy(d_kernel3, kernel_temp3, sizeof(kernel_temp3), cudaMemcpyHostToDevice);
+
+    float* d_kernel4 = nullptr;
+    cudaMalloc(&d_kernel4, sizeof(kernel_temp4));
+    cudaMemcpy(d_kernel4, kernel_temp4, sizeof(kernel_temp4), cudaMemcpyHostToDevice);
 
     //performing the convolution
     float alpha, beta; 
@@ -232,11 +227,42 @@ int main(void){
                                         output_descriptor,
                                         d_output2));
 
+    checkCUDNN(cudnnConvolutionForward(cudnn, 
+                                        &alpha,
+                                        input_descriptor,
+                                        d_input,
+                                        filter_descriptor,
+                                        d_kernel4, 
+                                        conv_descriptor,
+                                        conv_alg,
+                                        d_ws,
+                                        ws_bytes,
+                                        &beta,
+                                        output_descriptor,
+                                        d_output4));
+
+
+    checkCUDNN(cudnnConvolutionForward(cudnn, 
+                                        &alpha,
+                                        input_descriptor,
+                                        d_input,
+                                        filter_descriptor,
+                                        d_kernel3, 
+                                        conv_descriptor,
+                                        conv_alg,
+                                        d_ws,
+                                        ws_bytes,
+                                        &beta,
+                                        output_descriptor,
+                                        d_output3));
+
     std::cout << "\n\n hehe after conv \n\n\n";
 
 
     float* h_output = new float[imsize];
     float* h_output2 = new float[imsize];
+    float* h_output3 = new float[imsize];
+    float* h_output4 = new float[imsize];
 
     std::cout << "\n\n hehe after conv 1\n\n\n";
 
@@ -249,8 +275,14 @@ int main(void){
     cudaMemcpy(h_output2, d_output2, imsize, cudaMemcpyDeviceToHost);
     save_image("conure(out)2.png", h_output2, image.rows, image.cols);
 
+    cudaMemcpy(h_output3, d_output3, imsize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_output4, d_output4, imsize, cudaMemcpyDeviceToHost);
+
+    save_image("conure(out)3.png", h_output3, image.rows, image.cols);
+    save_image("conure(out)4.png", h_output4, image.rows, image.cols);
+
     for (int count = 0; count < imsize; count++){
-      h_output2[count] = std::max(h_output[count], h_output2[count]);
+      h_output2[count] = std::max(std::max(std::max(h_output[count], h_output2[count]), h_output3[count]), h_output4[count]);
 
     }
 
