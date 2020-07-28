@@ -3,3 +3,7 @@ Learning the CUDNN library and how to develop in CUDA with what is essentially C
 
 ## convolution with CUDNN
 in the CUDNN folder; performing convolution with 4 edge detecting kernals and combingin the out images (max of the 4 pixels) to find edges in image. 
+
+![](CUDNN_stuff/conure.jpg)
+
+![](CUDNN_stuff/conure(out)combined.png)
